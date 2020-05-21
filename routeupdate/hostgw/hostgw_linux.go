@@ -1,4 +1,4 @@
-//+build !windows
+// +build linux
 
 package hostgw
 
@@ -37,7 +37,7 @@ func (p *HostGw) onChangeNoError(version string) {
 }
 
 func (p *HostGw) Reload() error {
-	log.Debug("HostGW: reload")
+	log.Info("HostGW: reload")
 	if err := p.configure(); err != nil {
 		return errors.Wrap(err, "Failed to reload hostgw routes")
 	}
@@ -45,8 +45,6 @@ func (p *HostGw) Reload() error {
 }
 
 func (p *HostGw) configure() error {
-	log.Debug("HostGW: reload")
-
 	selfHost, err := p.m.GetSelfHost()
 	if err != nil {
 		return errors.Wrap(err, "Failed to get self host from metadata")

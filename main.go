@@ -39,8 +39,8 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "route-update-provider",
-			EnvVar: "RANCHER_ROUTE_UPDATE_PROVIDER",
 			Value:  setting.DefaultRouteUpdateProvider,
+			EnvVar: "RANCHER_ROUTE_UPDATE_PROVIDER",
 		},
 		cli.BoolFlag{
 			Name:  "register-service",

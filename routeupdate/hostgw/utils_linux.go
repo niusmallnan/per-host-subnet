@@ -1,4 +1,4 @@
-//+build !windows
+//+build linux
 
 package hostgw
 
@@ -39,7 +39,7 @@ func getCurrentRouteEntries(host metadata.Host) (map[string]*netlink.Route, erro
 		}
 	}
 
-	log.Debugf("getCurrentRouteEntries: routeEntries %v", routeEntries)
+	log.Infof("getCurrentRouteEntries: routeEntries %v", routeEntries)
 	return routeEntries, nil
 }
 
@@ -61,7 +61,7 @@ func getDesiredRouteEntries(selfHost metadata.Host, allHosts []metadata.Host) (m
 		}
 	}
 
-	log.Debugf("getDesiredRouteEntries: routeEntries %v", routeEntries)
+	log.Infof("getDesiredRouteEntries: routeEntries %v", routeEntries)
 	return routeEntries, nil
 }
 

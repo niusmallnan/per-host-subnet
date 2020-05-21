@@ -1,4 +1,5 @@
-//+build windows
+// +build windows
+
 package register
 
 import (
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/log"
 	"golang.org/x/sys/windows"
@@ -56,43 +58,43 @@ type handler struct {
 }
 
 type etwHook struct {
-	log *eventlog.Log
+	elog *eventlog.Log
 }
 
-func (h *etwHook) Levels() []log.Level {
-	return []log.Level{
-		log.PanicLevel,
-		log.FatalLevel,
-		log.ErrorLevel,
-		log.WarnLevel,
-		log.InfoLevel,
-		log.DebugLevel,
+func (h *etwHook) Levels() []logrus.Level {
+	return []logrus.Level{
+		logrus.PanicLevel,
+		logrus.FatalLevel,
+		logrus.ErrorLevel,
+		logrus.WarnLevel,
+		logrus.InfoLevel,
+		logrus.DebugLevel,
 	}
 }
 
-func (h *etwHook) Fire(e *log.Entry) error {
+func (h *etwHook) Fire(e *logrus.Entry) error {
 	var (
 		etype uint16
 		eid   uint32
 	)
 
 	switch e.Level {
-	case log.PanicLevel:
+	case logrus.PanicLevel:
 		etype = windows.EVENTLOG_ERROR_TYPE
 		eid = eventPanic
-	case log.FatalLevel:
+	case logrus.FatalLevel:
 		etype = windows.EVENTLOG_ERROR_TYPE
 		eid = eventFatal
-	case log.ErrorLevel:
+	case logrus.ErrorLevel:
 		etype = windows.EVENTLOG_ERROR_TYPE
 		eid = eventError
-	case log.WarnLevel:
+	case logrus.WarnLevel:
 		etype = windows.EVENTLOG_WARNING_TYPE
 		eid = eventWarn
-	case log.InfoLevel:
+	case logrus.InfoLevel:
 		etype = windows.EVENTLOG_INFORMATION_TYPE
 		eid = eventInfo
-	case log.DebugLevel:
+	case logrus.DebugLevel:
 		etype = windows.EVENTLOG_INFORMATION_TYPE
 		eid = eventDebug
 	default:
@@ -114,7 +116,7 @@ func (h *etwHook) Fire(e *log.Entry) error {
 		eid += eventExtraOffset
 	}
 
-	if h.log == nil {
+	if h.elog == nil {
 		fmt.Fprintf(os.Stderr, "%s [%s]\n", e.Message, exts)
 		return nil
 	}
@@ -139,7 +141,7 @@ func (h *etwHook) Fire(e *log.Entry) error {
 		count++
 	}
 
-	return windows.ReportEvent(h.log.Handle, etype, 0, eid, 0, count, 0, &ss[0], nil)
+	return windows.ReportEvent(h.elog.Handle, etype, 0, eid, 0, count, 0, &ss[0], nil)
 }
 
 func getServicePath() (string, error) {
@@ -276,15 +278,15 @@ func initService(register, unregister bool) error {
 		fromsvc: make(chan error),
 	}
 
-	var log *eventlog.Log
+	var elog *eventlog.Log
 	if !interactive {
-		log, err = eventlog.Open(ServiceName)
+		elog, err = eventlog.Open(ServiceName)
 		if err != nil {
 			return err
 		}
 	}
 
-	log.AddHook(&etwHook{log})
+	logrus.AddHook(&etwHook{elog})
 	if _, err := os.Stat(logFile); err != nil {
 		_, err := os.Create(logFile)
 		if err != nil {
@@ -295,7 +297,7 @@ func initService(register, unregister bool) error {
 	if err != nil {
 		return err
 	}
-	log.SetOutput(file)
+	logrus.SetOutput(file)
 
 	service = h
 	go func() {

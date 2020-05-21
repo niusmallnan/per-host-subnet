@@ -4,8 +4,6 @@ set -e
 REPO=${REPO:-rancher}
 SCRIPTPATH="$(cd "$(dirname "$0")"; pwd -P)"
 
-source $(dirname $0)/version
-
 package (){
     mkdir -p dist/artifacts rootfs
     pushd rootfs

@@ -1,4 +1,4 @@
-//+build windows
+// +build windows
 
 package hostgw
 
@@ -6,6 +6,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/rancher/log"
@@ -56,7 +57,7 @@ func (p *HostGw) getDesiredRouteEntries(iface net.Interface, selfHost metadata.H
 
 		_, ipNet, err := net.ParseCIDR(h.Labels[perHostSubnetLabel])
 		if err != nil {
-			log.WithField("host", h.UUID).Warn(err)
+			log.Warnf("host: %s, err: %v", h.UUID, err)
 			continue
 		}
 
@@ -107,12 +108,9 @@ func (p *HostGw) updateRoutes(oldEntries map[string]*winroute.RouteRow, newEntri
 }
 
 func (p *HostGw) logRouteEntries(entries map[string]*winroute.RouteRow, action string) {
-	if log.GetLevel() == log.DebugLevel {
+	if log.GetLevel() == logrus.DebugLevel {
 		for _, route := range entries {
-			log.WithFields(log.Fields{
-				"dest":    route.DestinationPrefix.String(),
-				"gateway": route.NextHop,
-			}).Debug(action)
+			log.Debugf("dest: %s, gateway: %s, action: %s", route.DestinationPrefix.String(), string(route.NextHop), action)
 		}
 	}
 }

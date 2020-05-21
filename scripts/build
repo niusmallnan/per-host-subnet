@@ -20,8 +20,6 @@ if [ -n "$CROSS" ]; then
             LINKFLAGS=" -extldflags -static"
             if test "$OS" = "windows"; then
                 OUTPUT_BIN="${OUTPUT_BIN}.exe"
-            else
-                LINKFLAGS=" -linkmode external $LINKFLAGS"
             fi
             echo "Building binary for $OS/$ARCH..."
             GOARCH=$ARCH GOOS=$OS CGO_ENABLED=0 go build \
