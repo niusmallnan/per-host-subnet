@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
@@ -50,6 +51,11 @@ func main() {
 			Name:  "unregister-service",
 			Usage: "Unregister windows service, invalid for non windows OS.",
 		},
+		cli.IntFlag{
+			Name:  "health-check-port",
+			Usage: "Port to listen on for healthchecks",
+			Value: 30088,
+		},
 	}
 	app.Action = appMain
 	if err := app.Run(os.Args); err != nil {
@@ -94,5 +100,34 @@ func appMain(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	go func(exit chan<- error) {
+		err := startHealthCheck(ctx.Int("health-check-port"), m)
+		exit <- errors.Wrapf(err, "Healthcheck provider died.")
+	}(done)
+
+	err = <-done
+	log.Errorf("Exiting per-host-subnet with error: %v", err)
 	return <-done
+}
+
+func startHealthCheck(listen int, md metadata.Client) error {
+	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+		var errMsg string
+		healthy := true
+		_, err := md.GetVersion()
+		if err != nil {
+			healthy = false
+			errMsg = fmt.Sprintf("error fetching metadata version: %v", err)
+		}
+		if healthy {
+			fmt.Fprint(w, "ok")
+		} else {
+			log.Errorf("failed healtcheck: %v", errMsg)
+			http.Error(w, "Metadata and dns is unreachable", http.StatusNotFound)
+		}
+	})
+	log.Infof("Listening for health checks on 0.0.0.0:%d/healthcheck", listen)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", listen), nil)
+	return err
 }
