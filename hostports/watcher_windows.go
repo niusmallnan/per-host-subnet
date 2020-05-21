@@ -8,12 +8,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/rancher/go-winnat"
-
-	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/go-winnat"
 	natdrivers "github.com/rancher/go-winnat/drivers"
+	"github.com/rancher/log"
 )
 
 const (
@@ -43,7 +41,7 @@ func Watch(c metadata.Client) error {
 	}
 	conf := map[string]interface{}{}
 	conf[natdrivers.NatAdapterName] = strings.Join(names, ",")
-	logrus.Debugf("driver config is %#v", conf)
+	log.Debugf("driver config is %#v", conf)
 	driver, err := winnat.NewNatDriver(natdrivers.NetshDriverName, conf)
 	if err != nil {
 		return err
@@ -59,12 +57,12 @@ func Watch(c metadata.Client) error {
 
 func (w *watcher) onChangeNoError(version string) {
 	if err := w.onChange(version); err != nil {
-		logrus.Errorf("Failed to apply ipset: %v", err)
+		log.Errorf("Failed to apply ipset: %v", err)
 	}
 }
 
 func (w *watcher) onChange(version string) error {
-	logrus.Debug("hostports:  Creating rule set")
+	log.Debug("hostports:  Creating rule set")
 	newPortRules := map[string]natdrivers.PortMapping{}
 
 	host, err := w.c.GetSelfHost()
@@ -107,9 +105,9 @@ func (w *watcher) onChange(version string) error {
 			newPortRules[container.ExternalId+"/"+port] = rule
 		}
 	}
-	logrus.Debugf("hostports:  New generated rules: %v", newPortRules)
+	log.Debugf("hostports:  New generated rules: %v", newPortRules)
 	if !compareRules(w.appliedPortRules, newPortRules) {
-		logrus.Infof("hostports: : Applying new rules")
+		log.Infof("hostports: : Applying new rules")
 		return w.apply(newPortRules)
 	} else if time.Now().Sub(w.lastApplied) > reapplyEvery {
 		return w.apply(newPortRules)
@@ -126,7 +124,7 @@ func (w *watcher) apply(newRules map[string]natdrivers.PortMapping) error {
 	if err != nil {
 		return err
 	}
-	logrus.Infof("%#v", l)
+	log.Infof("%#v", l)
 	var rules []natdrivers.PortMapping
 	for _, rule := range newRules {
 		rules = append(rules, rule)

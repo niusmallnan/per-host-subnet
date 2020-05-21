@@ -12,11 +12,3 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
-
-bin
-dist
-per-host-subnet
-/.dapper
-*.swp
-/.trash-cache
-/trash.lock

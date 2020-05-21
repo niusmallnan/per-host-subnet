@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/log"
+	"github.com/rancher/log/server"
 	"github.com/rancher/per-host-subnet/hostnat"
 	"github.com/rancher/per-host-subnet/hostports"
 	"github.com/rancher/per-host-subnet/register"
@@ -52,17 +53,19 @@ func main() {
 	}
 	app.Action = appMain
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 }
 
 func appMain(ctx *cli.Context) error {
+	server.StartServerWithDefaults()
+
 	if ctx.Bool("debug") {
-		logrus.SetLevel(logrus.DebugLevel)
+		log.SetLevelString("debug")
 	}
 
 	if ctx.Bool("register-service") && ctx.Bool("unregister-service") {
-		logrus.Fatal("Can not use flag register-service and unregister-service at the same time")
+		log.Fatal("Can not use flag register-service and unregister-service at the same time")
 	}
 	if err := register.Init(ctx.Bool("register-service"), ctx.Bool("unregister-service")); err != nil {
 		return err

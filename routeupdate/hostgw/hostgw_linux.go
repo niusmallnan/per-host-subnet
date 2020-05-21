@@ -1,9 +1,11 @@
+//+build !windows
+
 package hostgw
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/log"
 )
 
 const (
@@ -30,12 +32,12 @@ func (p *HostGw) Start() {
 
 func (p *HostGw) onChangeNoError(version string) {
 	if err := p.Reload(); err != nil {
-		logrus.Errorf("Failed to apply host route : %v", err)
+		log.Errorf("Failed to apply host route : %v", err)
 	}
 }
 
 func (p *HostGw) Reload() error {
-	logrus.Debug("HostGW: reload")
+	log.Debug("HostGW: reload")
 	if err := p.configure(); err != nil {
 		return errors.Wrap(err, "Failed to reload hostgw routes")
 	}
@@ -43,7 +45,7 @@ func (p *HostGw) Reload() error {
 }
 
 func (p *HostGw) configure() error {
-	logrus.Debug("HostGW: reload")
+	log.Debug("HostGW: reload")
 
 	selfHost, err := p.m.GetSelfHost()
 	if err != nil {

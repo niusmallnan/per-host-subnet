@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"github.com/rancher/log"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
@@ -59,40 +59,40 @@ type etwHook struct {
 	log *eventlog.Log
 }
 
-func (h *etwHook) Levels() []logrus.Level {
-	return []logrus.Level{
-		logrus.PanicLevel,
-		logrus.FatalLevel,
-		logrus.ErrorLevel,
-		logrus.WarnLevel,
-		logrus.InfoLevel,
-		logrus.DebugLevel,
+func (h *etwHook) Levels() []log.Level {
+	return []log.Level{
+		log.PanicLevel,
+		log.FatalLevel,
+		log.ErrorLevel,
+		log.WarnLevel,
+		log.InfoLevel,
+		log.DebugLevel,
 	}
 }
 
-func (h *etwHook) Fire(e *logrus.Entry) error {
+func (h *etwHook) Fire(e *log.Entry) error {
 	var (
 		etype uint16
 		eid   uint32
 	)
 
 	switch e.Level {
-	case logrus.PanicLevel:
+	case log.PanicLevel:
 		etype = windows.EVENTLOG_ERROR_TYPE
 		eid = eventPanic
-	case logrus.FatalLevel:
+	case log.FatalLevel:
 		etype = windows.EVENTLOG_ERROR_TYPE
 		eid = eventFatal
-	case logrus.ErrorLevel:
+	case log.ErrorLevel:
 		etype = windows.EVENTLOG_ERROR_TYPE
 		eid = eventError
-	case logrus.WarnLevel:
+	case log.WarnLevel:
 		etype = windows.EVENTLOG_WARNING_TYPE
 		eid = eventWarn
-	case logrus.InfoLevel:
+	case log.InfoLevel:
 		etype = windows.EVENTLOG_INFORMATION_TYPE
 		eid = eventInfo
-	case logrus.DebugLevel:
+	case log.DebugLevel:
 		etype = windows.EVENTLOG_INFORMATION_TYPE
 		eid = eventDebug
 	default:
@@ -255,14 +255,14 @@ func initService(register, unregister bool) error {
 	if register {
 		err := registerService()
 		if err != nil {
-			logrus.Fatalf("Failed to register service, err: %v", err)
+			log.Fatalf("Failed to register service, err: %v", err)
 		}
 		os.Exit(0)
 	}
 	if unregister {
 		err := unregisterService()
 		if err != nil {
-			logrus.Fatalf("Failed to unregister service, err: %v", err)
+			log.Fatalf("Failed to unregister service, err: %v", err)
 		}
 		os.Exit(0)
 	}
@@ -284,7 +284,7 @@ func initService(register, unregister bool) error {
 		}
 	}
 
-	logrus.AddHook(&etwHook{log})
+	log.AddHook(&etwHook{log})
 	if _, err := os.Stat(logFile); err != nil {
 		_, err := os.Create(logFile)
 		if err != nil {
@@ -295,7 +295,7 @@ func initService(register, unregister bool) error {
 	if err != nil {
 		return err
 	}
-	logrus.SetOutput(file)
+	log.SetOutput(file)
 
 	service = h
 	go func() {
@@ -327,7 +327,7 @@ func (h *handler) started() error {
 }
 
 func (h *handler) stopped(err error) {
-	logrus.Debugf("Stopping service: %v", err)
+	log.Debugf("Stopping service: %v", err)
 	h.tosvc <- err != nil
 	<-h.fromsvc
 }
@@ -340,12 +340,12 @@ func (h *handler) Execute(_ []string, r <-chan svc.ChangeRequest, s chan<- svc.S
 	// Wait for initialization to complete.
 	failed := <-h.tosvc
 	if failed {
-		logrus.Debug("Aborting service start due to failure during initialization")
+		log.Debug("Aborting service start due to failure during initialization")
 		return true, 1
 	}
 
 	s <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptShutdown | svc.Accepted(windows.SERVICE_ACCEPT_PARAMCHANGE)}
-	logrus.Debug("Service running")
+	log.Debug("Service running")
 Loop:
 	for {
 		select {
@@ -432,7 +432,7 @@ func notifySystem() {
 	if service != nil {
 		err := service.started()
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 }
@@ -440,7 +440,7 @@ func notifySystem() {
 func NotifyShutdown(err error) {
 	if service != nil {
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 		service.stopped(err)
 	}
@@ -457,7 +457,7 @@ func Init(register, unregister bool) error {
 	go func() {
 		signal := <-serviceSignal
 		if signal {
-			logrus.Info("Receiving service stop signal. Stopping per-host-subnet")
+			log.Info("Receiving service stop signal. Stopping per-host-subnet")
 			os.Exit(0)
 		}
 	}()

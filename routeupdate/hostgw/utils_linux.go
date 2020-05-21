@@ -1,11 +1,13 @@
+//+build !windows
+
 package hostgw
 
 import (
 	"net"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/log"
 	"github.com/vishvananda/netlink"
 )
 
@@ -16,7 +18,7 @@ const (
 func getHostSubnet(host metadata.Host) (*net.IPNet, error) {
 	ipnet, err := netlink.ParseIPNet(host.Labels[perHostSubnetLabel])
 	if err != nil {
-		logrus.Errorf("Failed to parse host %s subnet: %s", host.Name, err)
+		log.Errorf("Failed to parse host %s subnet: %s", host.Name, err)
 	}
 	return ipnet, err
 }
@@ -25,7 +27,7 @@ func getCurrentRouteEntries(host metadata.Host) (map[string]*netlink.Route, erro
 	routeFilter := &netlink.Route{Src: net.ParseIP(getAgentIP(host))}
 	existRoutes, err := netlink.RouteListFiltered(netlink.FAMILY_V4, routeFilter, netlink.RT_FILTER_SRC)
 	if err != nil {
-		logrus.Errorf("Failed to getCurrentRouteEntries, RouteList: %v", err)
+		log.Errorf("Failed to getCurrentRouteEntries, RouteList: %v", err)
 		return nil, err
 	}
 
@@ -37,7 +39,7 @@ func getCurrentRouteEntries(host metadata.Host) (map[string]*netlink.Route, erro
 		}
 	}
 
-	logrus.Debugf("getCurrentRouteEntries: routeEntries %v", routeEntries)
+	log.Debugf("getCurrentRouteEntries: routeEntries %v", routeEntries)
 	return routeEntries, nil
 }
 
@@ -59,7 +61,7 @@ func getDesiredRouteEntries(selfHost metadata.Host, allHosts []metadata.Host) (m
 		}
 	}
 
-	logrus.Debugf("getDesiredRouteEntries: routeEntries %v", routeEntries)
+	log.Debugf("getDesiredRouteEntries: routeEntries %v", routeEntries)
 	return routeEntries, nil
 }
 
@@ -73,7 +75,7 @@ func updateRoutes(oldEntries map[string]*netlink.Route, newEntries map[string]*n
 		} else {
 			err := netlink.RouteDel(oe)
 			if err != nil {
-				logrus.Errorf("updateRoute: failed to RouteDel, %v", err)
+				log.Errorf("updateRoute: failed to RouteDel, %v", err)
 				e = errors.Wrap(e, err.Error())
 			}
 		}
@@ -82,7 +84,7 @@ func updateRoutes(oldEntries map[string]*netlink.Route, newEntries map[string]*n
 	for _, ne := range newEntries {
 		err := netlink.RouteAdd(ne)
 		if err != nil {
-			logrus.Errorf("updateRoute: failed to RouteAdd, %v", err)
+			log.Errorf("updateRoute: failed to RouteAdd, %v", err)
 			e = errors.Wrap(e, err.Error())
 		}
 	}

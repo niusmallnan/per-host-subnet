@@ -5,9 +5,9 @@ package hostnat
 import (
 	"os/exec"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/log"
 	"github.com/rancher/per-host-subnet/setting"
 )
 
@@ -37,12 +37,12 @@ type watcher struct {
 
 func (w *watcher) onChangeNoError(version string) {
 	if err := w.onChange(version); err != nil {
-		logrus.Errorf("Failed to apply ipset: %v", err)
+		log.Errorf("Failed to apply ipset: %v", err)
 	}
 }
 
 func (w *watcher) onChange(version string) error {
-	logrus.Debug("Evaluating NAT ipset")
+	log.Debug("Evaluating NAT ipset")
 
 	selfHost, err := w.c.GetSelfHost()
 	if err != nil {

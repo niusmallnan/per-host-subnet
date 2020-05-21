@@ -1,12 +1,14 @@
+//+build windows
+
 package hostgw
 
 import (
 	"net"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/log"
 	winroute "github.com/rancher/win-route-netsh"
 )
 
